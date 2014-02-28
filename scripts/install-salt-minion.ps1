@@ -92,10 +92,16 @@ function install-salt-minion-windows {
 		echo "### INFO: Copying fap-deployment.properties file to $CONS3RT_DIR for inspection after logging in ..."
 		Copy-Item $propFile $CONS3RT_DIR\ -recurse -force
 		
-		# Grab the salt-master hostname or IP address if it exists
-		$saltMaster = Get-Content $propFile | Select-String "salt-master" | foreach {$d = $_ -split "="; Write-Output $d[1] }
+		# Grab the salt-master hostname or IP address if it stored written as a Cons3rt Scenario Role Name
+		$saltMaster = Get-Content $propFile | Select-String "ipAddress.salt-master" | foreach {$d = $_ -split "="; Write-Output $d[1] }
 		
-		# Check to see if salt-master was specified.  Note that Powershell is case insensitive.
+		# If the IP address was not a Cons3rt Scenario Role Name, check if a Cons3rt Deployment Runtime Property was defined for salt-master
+		if ( !$saltMaster ) {
+			echo "### INFO: salt-master not found as a Scenario Role Name, checking for a Deployment Runtime Property for salt-master ... "
+			$saltMaster = Get-Content $propFile | Select-String "salt-master" | foreach {$d = $_ -split "="; Write-Output $d[1] }
+		}
+		
+		# Check to see if salt-master was specified, if not throw a warning and do not install Salt Minion.  Note that Powershell is case insensitive.
 		if ( !$saltMaster ) {
 			echo "### WARN: fap-deployment.properties did not contain an entry for salt-master (case insensitive), not defined as a role name or runtime property."
 			echo "### WARN: Salt Minion will not be automatically installed, but can be manually installed from $CONS3RT_DIR after logging in."
@@ -103,8 +109,6 @@ function install-salt-minion-windows {
 		else {
 			echo "### INFO: fap-deployment.properties contains a runtime property for salt-master: $saltMaster"
 			echo "### INFO: Salt Minion for Windows will be installed with $saltMaster as the salt-master ..."
-			$rand=Get-Random
-			$minionName="minion-$rand"
 			
 			echo "### INFO: Checking to ensure the $INSTALLER is located in $CONS3RT_DIR ..."
 			
@@ -112,11 +116,25 @@ function install-salt-minion-windows {
 				echo "### ERROR: $INSTALLER not found in $CONS3RT_DIR.  Salt Minion will not be installed."
 			}
 			else {
+				
+				# Get the IP address of this system in order to get this system's Cons3rt Scenario Role Name
+				echo "### INFO: Getting this system's IP address ..."
+				$ipAddress = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter 'IPEnabled = "true"').ipaddress[0]
+				echo "### INFO: IP address: $ipAddress"
+				
+				# Pull the Cons3rt Scenario Role name from the fap-deployment.properties file
+				echo "### INFO: Attempting to get the Cons3rt Scenario Role name from $propFile ..."
+				$rand=Get-Random
+				$minionName="minion-$rand"
+				
+				# Install Salt Minion for Windows
 				$installPath="$CONS3RT_DIR\$INSTALLER"
 				$argList=@("/S", "/master=$saltMaster", "/minion-name=$minionName")
 				echo "### INFO: Installing Salt Minion for Windows ..."
 				Start-Process -FilePath $installPath -ArgumentList $argList -RedirectStandardOutput "$LOG_DIR\$SALT_OUT" -RedirectStandardError "$LOG_DIR\$SALT_ERR" -Wait
 				echo "### INFO: done installing Salt Minion on Windows."
+				
+				# Start the salt-minion service
 				echo "### INFO: Starting the salt-minion service ..."
 				Start-Service salt-minion
 				echo "### INFO: done."
