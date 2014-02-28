@@ -34,6 +34,8 @@ $CONS3RT_DIR="$ROOT\$CONS3RT_DIRNAME"
 $LOG_DIRNAME="log"
 $LOG_DIR="$ROOT\$CONS3RT_DIRNAME\$LOG_DIRNAME"
 $LOGFILE="cons3rt-install-salt-minion-windows-${TIMESTAMP}.log"
+$SALT_OUT="cons3rt-install-salt-minion-windows-output-${TIMESTAMP}.log"
+$SALT_ERR="cons3rt-install-salt-minion-windows-error-${TIMESTAMP}.log"
 
 
 function install-salt-minion-windows {
@@ -81,7 +83,7 @@ function install-salt-minion-windows {
 	$propFile="$DEPLOYMENT_HOME/fap-deployment.properties"
 	
 	# Try to get salt-master IP/hostname from the fap-deployment.properties file
-	if ( !$DEPLOYMENT_HOME -or !(test-path $propFile) ) {"
+	if ( !$DEPLOYMENT_HOME -or !(test-path $propFile) ) {
 		echo "### WARN: fap-deployment.properties file was not found in $DEPLOYMENT_HOME.  Cannot determine salt-master from role name or runtime properties."
 		echo "### WARN: Salt Minion will not be automatically installed, but can be manually installed from $CONS3RT_DIR after logging in."
 	}
@@ -101,10 +103,24 @@ function install-salt-minion-windows {
 		else {
 			echo "### INFO: fap-deployment.properties contains a runtime property for salt-master: $saltMaster"
 			echo "### INFO: Salt Minion for Windows will be installed with $saltMaster as the salt-master ..."
-			$rand=GetRandom
-			$minionName=minion-$rand
-			$CONS3RT_DIR\$INSTALLER /S /master=$saltMaster /minion-name=$minionName
-			echo "### INFO: done installing Salt Minion on Windows."
+			$rand=Get-Random
+			$minionName="minion-$rand"
+			
+			echo "### INFO: Checking to ensure the $INSTALLER is located in $CONS3RT_DIR ..."
+			
+			if ( !(test-path $CONS3RT_DIR\$INSTALLER) ) {
+				echo "### ERROR: $INSTALLER not found in $CONS3RT_DIR.  Salt Minion will not be installed."
+			}
+			else {
+				$installPath="$CONS3RT_DIR\$INSTALLER"
+				$argList=@("/S", "/master=$saltMaster", "/minion-name=$minionName")
+				echo "### INFO: Installing Salt Minion for Windows ..."
+				Start-Process -FilePath $installPath -ArgumentList $argList -RedirectStandardOutput "$LOG_DIR\$SALT_OUT" -RedirectStandardError "$LOG_DIR\$SALT_ERR" -Wait
+				echo "### INFO: done installing Salt Minion on Windows."
+				echo "### INFO: Starting the salt-minion service ..."
+				Start-Service salt-minion
+				echo "### INFO: done."
+			}
 		}
 	}
 	
@@ -115,7 +131,7 @@ function install-salt-minion-windows {
 New-Item -name $CONS3RT_DIRNAME -path "$ROOT\" -itemType directory -force
 
 # Create the log directory
-New-Item -name $LOG_DIRNAME -path "$ROOT\CONS3RT_DIRNAME" -itemType directory -force
+New-Item -name $LOG_DIRNAME -path "$ROOT\$CONS3RT_DIRNAME" -itemType directory -force
 
 # Run the install function
 echo "Running the install function ..."
