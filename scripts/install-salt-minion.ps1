@@ -1,16 +1,14 @@
 #
+# install-salt-minion.ps1
+#
 # Prepared by: Joseph Yennaco
 # PCI Strategic Management, LLC
 # 15 New England Executive Park #2106
 # Burlington, MA 01803
 # 
-# Prepared for: DCGS MET Office (DMO)
-# 11 Barksdale Street
-# Hanscom AFB, MA 01731
+# Date: 27 February 2014
 #
-# Date: 23 January 2014
-#
-# Purpose: This script installs and starts the CTE in InMemory mode.
+# Purpose: This script downloads and installs the Salt Minion to Windows 
 # 
 
 # The value of ASSET_DIR provided by CONS3RT
