@@ -20,7 +20,7 @@ REM  	-- Run this script as an admin user
 REM 
 
 set URL="http://docs.saltstack.com/downloads"
-set INSTALLER="/Salt-Minion-2014.1.0-AMD64-Setup.exe"
+set INSTALLER="Salt-Minion-2014.1.0-AMD64-Setup.exe"
 
 echo Running Powershell...
 
