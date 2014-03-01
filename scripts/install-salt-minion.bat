@@ -39,7 +39,7 @@ echo "### INFO: POWERSHELL_SCRIPT: %POWERSHELL_SCRIPT%"
 echo "### INFO: Running Powershell ..."
 
 REM -- Invoke the Powershell script
-start /wait powershell -NoLogo -Noninteractive -ExecutionPolicy Bypass -File %CD%\\%POWERSHELL_SCRIPT% %ASSET_DIR% %URL% %INSTALLER% %DEPLOYMENT_HOME%
+start /wait powershell -NoLogo -Noninteractive -ExecutionPolicy Bypass -File %ASSET_DIR%\\scripts\\%POWERSHELL_SCRIPT% %ASSET_DIR% %URL% %INSTALLER% %DEPLOYMENT_HOME%
 
 echo "### INFO: Powershell Done."
 echo "### INFO: install-salt-minion.bat complete."
